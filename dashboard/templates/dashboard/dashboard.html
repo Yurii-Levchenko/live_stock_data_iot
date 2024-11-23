@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Welcome to the Stock Dashboard</h1>
+<script>
+    const socket = new WebSocket('ws://localhost:8000/ws/stocks/');
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        console.log('Stock update:', data);
+        // Update the DOM with stock data (e.g., append to a list or table)
+    };
+    socket.onclose = function() {
+        console.log('WebSocket closed.');
+    };
+</script>
+
+{% endblock %}
