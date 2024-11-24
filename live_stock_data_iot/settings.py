@@ -145,3 +145,11 @@ CHANNEL_LAYERS = {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
+
+LOGIN_REDIRECT_URL = '/dashboard/'
+
+LOGIN_URL = '/login/'
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']  # Replace 'static' with the correct path to your static folder
+STATIC_ROOT = BASE_DIR / 'staticfiles'

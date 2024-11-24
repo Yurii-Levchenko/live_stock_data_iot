@@ -1,13 +1,48 @@
-{% extends 'base.html' %}
+{% extends 'base\base.html' %}
+
 {% block content %}
 <h1>Welcome to the Stock Dashboard</h1>
+
+<div id="stock-dashboard">
+    <table id="stock-table" border="1">
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Price</th>
+                <th>Last Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Stock data will be dynamically added here -->
+        </tbody>
+    </table>
+</div>
+
 <script>
     const socket = new WebSocket('ws://localhost:8000/ws/stocks/');
+
+    // Update stock data dynamically
     socket.onmessage = function(event) {
         const data = JSON.parse(event.data);
         console.log('Stock update:', data);
-        // Update the DOM with stock data (e.g., append to a list or table)
+
+        const table = document.getElementById('stock-table').getElementsByTagName('tbody')[0];
+        const existingRow = document.getElementById(`row-${data.ticker}`);
+
+        if (existingRow) {
+            // Update existing row
+            existingRow.cells[1].innerText = `$${data.price}`;
+            existingRow.cells[2].innerText = data.timestamp;
+        } else {
+            // Add a new row
+            const newRow = table.insertRow();
+            newRow.id = `row-${data.ticker}`;
+            newRow.insertCell(0).innerText = data.ticker;
+            newRow.insertCell(1).innerText = `$${data.price}`;
+            newRow.insertCell(2).innerText = data.timestamp;
+        }
     };
+
     socket.onclose = function() {
         console.log('WebSocket closed.');
     };
