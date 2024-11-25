@@ -1,6 +1,14 @@
 {% extends 'base\base.html' %}
 {% block content %}
 <h2>Login</h2>
+{% comment %} <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    <label for="username">Username:</label>
+    <input type="text" name="username" id="username" required><br>
+    <label for="password">Password:</label>
+    <input type="password" name="password" id="password" required><br>
+    <button type="submit">Login</button>
+</form> {% endcomment %}
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}

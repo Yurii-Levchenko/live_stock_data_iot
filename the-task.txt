@@ -138,3 +138,24 @@ Database (PostgreSQL):
     Use Heroku or Railway with PostgreSQL.
 
 
+
+
+Publish/Subscribe Workflow
+    Simulated IoT Devices (simulate_devices.py):
+        IoT devices simulate stock data by publishing messages to the MQTT broker on topics such as stocks/AAPL.
+        These messages are sent to the broker at localhost:1883.
+
+    MQTT Broker (Eclipse Mosquitto):
+        Receives messages published by the IoT devices.
+        Forwards these messages to all subscribers of the corresponding topic (stocks/#).
+
+    Django MQTT Subscriber (iot/mqtt.py):
+        Subscribes to stocks/# and listens for new messages.
+        Upon receiving a message:
+            Extracts the stock ticker and price.
+            Updates the database (Stock and StockPrice models).
+            Broadcasts the stock update to WebSocket clients via Django Channels.
+
+WebSocket Consumer (dashboard/consumers.py):
+    WebSocket clients (e.g., the dashboard) connect to ws://localhost:8000/ws/stocks/.
+    When an update is received from the MQTT subscriber, the WebSocket broadcasts the update to all connected clients.

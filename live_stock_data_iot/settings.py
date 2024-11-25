@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    'daphne',
     "django.contrib.staticfiles",
     'rest_framework',              # For DRF
     'rest_framework_simplejwt',    # For JWT Authentication
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
     'iot',
     'dashboard',
     'users',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -122,7 +125,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / 'static'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -147,9 +151,19 @@ CHANNEL_LAYERS = {
 }
 
 LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/users/login/'
 
 LOGIN_URL = '/login/'
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']  # Replace 'static' with the correct path to your static folder
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
+}
+
+MQTT_SERVER = "localhost"
+MQTT_PORT = 1883
+MQTT_KEEPALIVE = 60

@@ -19,23 +19,53 @@
 </div>
 
 <script>
+    fetch('/api/stocks/')
+    .then(response => response.json())
+    .then(data => {
+        const tableBody = document.querySelector("#stock-table tbody");
+        data.forEach(stock => {
+            const newRow = tableBody.insertRow();
+            newRow.id = `row-${stock.ticker}`;
+            newRow.insertCell(0).innerText = stock.ticker;
+            newRow.insertCell(1).innerText = `$${stock.price || 'N/A'}`;
+            newRow.insertCell(2).innerText = stock.timestamp || 'N/A';
+        
+        // Add "Add to Favorites" button
+        const favButton = document.createElement('button');
+        favButton.innerText = "Add to Favorites";
+        favButton.onclick = () => {
+            fetch(`/api/favorites/`, {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer <your-token>",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ ticker: stock.ticker }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`${stock.ticker} added to favorites!`);
+                } else {
+                    alert(`Failed to add ${stock.ticker} to favorites.`);
+                }
+            });
+        };
+        const actionCell = newRow.insertCell(3);
+        actionCell.appendChild(favButton);
+        });
+    });
     const socket = new WebSocket('ws://localhost:8000/ws/stocks/');
 
-    // Update stock data dynamically
     socket.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        console.log('Stock update:', data);
-
-        const table = document.getElementById('stock-table').getElementsByTagName('tbody')[0];
-        const existingRow = document.getElementById(`row-${data.ticker}`);
-
-        if (existingRow) {
-            // Update existing row
-            existingRow.cells[1].innerText = `$${data.price}`;
-            existingRow.cells[2].innerText = data.timestamp;
+        const tableBody = document.querySelector("#stock-table tbody");
+    
+        let row = document.getElementById(`row-${data.ticker}`);
+        if (row) {
+            row.cells[1].innerText = `$${data.price}`;
+            row.cells[2].innerText = data.timestamp;
         } else {
-            // Add a new row
-            const newRow = table.insertRow();
+            const newRow = tableBody.insertRow();
             newRow.id = `row-${data.ticker}`;
             newRow.insertCell(0).innerText = data.ticker;
             newRow.insertCell(1).innerText = `$${data.price}`;
@@ -46,6 +76,7 @@
     socket.onclose = function() {
         console.log('WebSocket closed.');
     };
+
 </script>
 
 {% endblock %}
