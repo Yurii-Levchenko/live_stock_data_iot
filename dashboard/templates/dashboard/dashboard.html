@@ -13,7 +13,7 @@
             </tr>
         </thead>
         <tbody>
-            <!-- Stock data will be dynamically added here -->
+            <!-- stock data will be dynamically added here -->
         </tbody>
     </table>
 </div>
@@ -30,7 +30,7 @@
             newRow.insertCell(1).innerText = `$${stock.price || 'N/A'}`;
             newRow.insertCell(2).innerText = stock.timestamp || 'N/A';
         
-        // Add "Add to Favorites" button
+        // "Add to Favorites" button
         const favButton = document.createElement('button');
         favButton.innerText = "Add to Favorites";
         favButton.onclick = () => {
