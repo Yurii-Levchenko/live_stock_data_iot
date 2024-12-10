@@ -1,3 +1,5 @@
 env-stock/
 staticfiles/
-live_stock_data_simulation/env_simulation
+simulation/env-simulation
+the-task.txt
+simulation/mqtt-logic-schema.drawio
