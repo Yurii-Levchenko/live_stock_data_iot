@@ -1,7 +1,7 @@
 {% extends 'base\base.html' %}
 
 {% block content %}
-<h1>Welcome to the Stock Dashboard</h1>
+<h1>Welcome to the IoT Stock Dashboard, {{user.username}}</h1>
 
 <div id="stock-dashboard">
     <table id="stock-table" border="1">
@@ -10,10 +10,13 @@
                 <th>Ticker</th>
                 <th>Price</th>
                 <th>Last Updated</th>
+                <th>Market Status</th>
+                <th>Exchange</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Stock data will be dynamically added here -->
+            <!-- stock data will be dynamically added here -->
         </tbody>
     </table>
 </div>
@@ -28,16 +31,19 @@
             newRow.id = `row-${stock.ticker}`;
             newRow.insertCell(0).innerText = stock.ticker;
             newRow.insertCell(1).innerText = `$${stock.price || 'N/A'}`;
-            newRow.insertCell(2).innerText = stock.timestamp || 'N/A';
+            newRow.insertCell(2).innerText = stock.latest_price_time || 'N/A';
+            newRow.insertCell(3).innerText = stock.market_status || 'N/A';
+            newRow.insertCell(4).innerText = stock.exchange || 'N/A';
+            const actionCell = newRow.insertCell(5); // was 3 before
         
-        // Add "Add to Favorites" button
+        // "Add to Favorites" button
         const favButton = document.createElement('button');
         favButton.innerText = "Add to Favorites";
         favButton.onclick = () => {
-            fetch(`/api/favorites/`, {
+            fetch(`/api/favorites/add/`, {
                 method: "POST",
                 headers: {
-                    "Authorization": "Bearer <your-token>",
+                    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2NzMxODcyLCJpYXQiOjE3NDY3MTAyNzIsImp0aSI6IjMwYjliYTgxYWFkMjQxZWZhNDAzNzczYWJkNDQ4OWM1IiwidXNlcl9pZCI6Mn0.UjxgwZNnWLWyGVMABEV7LCPEpTFNQdJK6O9RFg5tAUc",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ ticker: stock.ticker }),
@@ -50,7 +56,6 @@
                 }
             });
         };
-        const actionCell = newRow.insertCell(3);
         actionCell.appendChild(favButton);
         });
     });
@@ -58,18 +63,24 @@
 
     socket.onmessage = function(event) {
         const data = JSON.parse(event.data);
+        console.log("Received update:", data);
         const tableBody = document.querySelector("#stock-table tbody");
     
         let row = document.getElementById(`row-${data.ticker}`);
         if (row) {
             row.cells[1].innerText = `$${data.price}`;
-            row.cells[2].innerText = data.timestamp;
+            row.cells[2].innerText = data.latest_price_time;
+            row.cells[3].innerText = data.market_status || 'N/A';
+            row.cells[4].innerText = data.exchange || 'N/A';
         } else {
             const newRow = tableBody.insertRow();
             newRow.id = `row-${data.ticker}`;
             newRow.insertCell(0).innerText = data.ticker;
             newRow.insertCell(1).innerText = `$${data.price}`;
-            newRow.insertCell(2).innerText = data.timestamp;
+            newRow.insertCell(2).innerText = data.latest_price_time;
+            newRow.insertCell(3).innerText = data.market_status || 'N/A';
+            newRow.insertCell(4).innerText = data.exchange || 'N/A';
+            newRow.insertCell(5).innerText = '—'; // Placeholder for action cell
         }
     };
 

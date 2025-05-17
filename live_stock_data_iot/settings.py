@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,9 +45,13 @@ INSTALLED_APPS = [
     'channels',                    # For WebSocket support
     'corsheaders',                 # For cross-origin requests
     'iot',
-    'dashboard',
-    'users',
+    # 'dashboard',
+    # 'users',
     'api',
+    'drf_yasg',
+    'dashboard.apps.DashboardConfig', # handles signals
+    'users.apps.UsersConfig', # handles signals
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -126,7 +131,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -140,6 +147,14 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
 }
 
 ASGI_APPLICATION = 'live_stock_data_iot.asgi.application'
@@ -150,7 +165,8 @@ CHANNEL_LAYERS = {
     },
 }
 
-LOGIN_REDIRECT_URL = '/dashboard/'
+LOGIN_URL = '/users/login/'
+LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/users/login/'
 
 LOGIN_URL = '/login/'
@@ -160,10 +176,25 @@ STATICFILES_DIRS = [BASE_DIR / 'static']  # Replace 'static' with the correct pa
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=360),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
 }
 
 MQTT_SERVER = "localhost"
 MQTT_PORT = 1883
 MQTT_KEEPALIVE = 60
+# MQTT_USER = ''
+# MQTT_PASSWORD = ''
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
+
+CELERY_BEAT_SCHEDULE = {
+    'fetch-daily-ohlc': {
+        'task': 'dashboard.tasks.fetch_daily_ohlc',
+        'schedule': crontab(hour=22, minute=30),  # example: every day at 16:30
+    },
+}

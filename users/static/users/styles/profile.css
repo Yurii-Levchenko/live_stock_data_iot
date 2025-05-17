@@ -1,0 +1,24 @@
+#user-form {
+    max-width: 600px;
+    margin-top: 1rem;
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+#user-form h3 {
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    padding-bottom: 20px;
+}
+
+#edit-profile {
+    background-color: #0ea5e9;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+}
