@@ -1,4 +1,126 @@
+/* Reset & base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+    font-size: 16px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background-color: #0f172a;
+    padding: 1rem 2rem;
+    color: #f1f5f9;
+}
+
+nav ul {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+}
+
+nav a {
+    color: #f1f5f9;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+nav a:hover {
+    color: #38bdf8;
+}
+
+main {
+    flex-grow: 1;
+    padding: 2rem;
+}
+
+footer {
+    background-color: #e2e8f0;
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.9rem;
+}
+
+/* Reusable elements */
 table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+th, td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+}
+
+tr:hover {
+    background-color: #f9fafb;
+}
+
+button {
+    background-color: #0ea5e9;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #0284c7;
+}
+
+#logout-button {
+    padding: 0.2rem 0.8rem;
+}
+
+input[type="text"],
+input[type="email"] {
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    width: 100%;
+    /* margin-bottom: 1rem; */
+}
+
+/* Message styles */
+.message {
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+}
+
+.message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+
+
+/* table {
     width: 100%;
     border-collapse: collapse;
 }
@@ -22,4 +144,4 @@ button {
 
 button:hover {
     background-color: #0056b3;
-}
+} */

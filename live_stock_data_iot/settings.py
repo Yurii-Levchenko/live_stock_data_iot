@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,10 +45,13 @@ INSTALLED_APPS = [
     'channels',                    # For WebSocket support
     'corsheaders',                 # For cross-origin requests
     'iot',
-    'dashboard',
-    'users',
+    # 'dashboard',
+    # 'users',
     'api',
     'drf_yasg',
+    'dashboard.apps.DashboardConfig', # handles signals
+    'users.apps.UsersConfig', # handles signals
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -127,7 +131,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -179,3 +185,16 @@ MQTT_PORT = 1883
 MQTT_KEEPALIVE = 60
 # MQTT_USER = ''
 # MQTT_PASSWORD = ''
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
+
+CELERY_BEAT_SCHEDULE = {
+    'fetch-daily-ohlc': {
+        'task': 'dashboard.tasks.fetch_daily_ohlc',
+        'schedule': crontab(hour=22, minute=30),  # example: every day at 16:30
+    },
+}

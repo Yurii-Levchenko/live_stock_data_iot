@@ -23,12 +23,26 @@ class StockViewSet(ModelViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request):
-        """
-        List all available stocks.
-        """
         stocks = Stock.objects.all()
-        serializer = StockSerializer(stocks, many=True, context={'request': request})
-        return Response(serializer.data)
+        result = []
+        for stock in stocks:
+            latest_price = StockPrice.objects.filter(stock=stock).order_by('-recorded_at').first()
+            result.append({
+                'ticker': stock.ticker,
+                'price': latest_price.price if latest_price else None,
+                'latest_price_time': latest_price.recorded_at.strftime('%Y-%m-%d %H:%M:%S') if latest_price else None,
+                'market_status': stock.market_status or 'N/A',
+                'exchange': stock.exchange or 'N/A',
+            })
+        return Response(result)
+
+    # def list(self, request):
+    #     """
+    #     List all available stocks.
+    #     """
+    #     stocks = Stock.objects.all()
+    #     serializer = StockSerializer(stocks, many=True, context={'request': request})
+    #     return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
         """
@@ -60,8 +74,8 @@ class UserFavoriteStocksViewSet(ModelViewSet):
     """
     A ModelViewSet for managing user favorite stocks.
     """
-    permission_classes = [AllowAny]
-    # permission_classes = [IsAuthenticated]
+    # permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     serializer_class = StockSerializer
 
     def get_queryset(self):
@@ -81,6 +95,13 @@ class UserFavoriteStocksViewSet(ModelViewSet):
         Add a stock to the user's favorites.
         """
         ticker = request.data.get("ticker")
+
+        print(f"Trying to add ticker: {ticker}")
+        print(f"User: {request.user}")
+
+        if not request.user.is_authenticated:
+            return Response({"error": "JWT Authentication required (Token is missing)."}, status=401)
+        
         try:
             stock = Stock.objects.get(ticker=ticker)
             profile = request.user.profile
@@ -88,6 +109,9 @@ class UserFavoriteStocksViewSet(ModelViewSet):
             return Response({"message": f"{ticker} added to favorites."})
         except Stock.DoesNotExist:
             return Response({"error": "Stock not found."}, status=404)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return Response({"error": str(e)}, status=500)
 
     @action(detail=False, methods=['post'], url_path='remove')
     def remove_favorite(self, request):
@@ -102,50 +126,6 @@ class UserFavoriteStocksViewSet(ModelViewSet):
             return Response({"message": f"{ticker} removed from favorites."})
         except Stock.DoesNotExist:
             return Response({"error": "Stock not found."}, status=404)
-
-
-
-
-# class UserFavoriteStocksViewSet(ViewSet):
-#     permission_classes = [IsAuthenticated]
-
-#     def list(self, request):
-#         profile = request.user.profile
-#         favorite_stocks = profile.favorite_tickers.all()
-#         serializer = StockSerializer(favorite_stocks, many=True)
-#         return Response(serializer.data)
-
-#     @action(detail=False, methods=['post'])
-#     def add(self, request):
-#         """Add a stock to the user's favorites."""
-#         ticker = request.data.get("ticker")
-#         try:
-#             stock = Stock.objects.get(ticker=ticker)
-#             profile = request.user.profile
-#             profile.favorite_tickers.add(stock)
-#             return Response({"message": f"{ticker} added to favorites."})
-#         except Stock.DoesNotExist:
-#             return Response({"error": "Stock not found."}, status=404)
-
-
-# class UserFavoriteStocksView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         profile = request.user.profile
-#         favorite_stocks = profile.favorite_tickers.all()
-#         stocks_data = [{"ticker": stock.ticker, "name": stock.name} for stock in favorite_stocks]
-#         return Response(stocks_data)
-
-#     def post(self, request):
-#         ticker = request.data.get("ticker")
-#         try:
-#             stock = Stock.objects.get(ticker=ticker)
-#             profile = request.user.profile
-#             profile.favorite_tickers.add(stock)
-#             return Response({"message": f"{ticker} added to favorites."}, status=status.HTTP_201_CREATED)
-#         except Stock.DoesNotExist:
-#             return Response({"error": "Stock not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 # User and Authentication Views

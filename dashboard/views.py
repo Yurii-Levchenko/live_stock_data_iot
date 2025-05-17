@@ -8,4 +8,6 @@ class FavoritesTemplateView(TemplateView):
         context = super().get_context_data(**kwargs)
         profile = self.request.user.profile
         context['stocks'] = profile.favorite_tickers.all()
+        context['user'] = self.request.user
         return context
+

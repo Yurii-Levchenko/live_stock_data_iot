@@ -9,7 +9,7 @@ from rest_framework.filters import SearchFilter
 class StockSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Stock
-        fields = ['id', 'url', 'ticker', 'name', 'sector']
+        fields = ['id', 'url', 'ticker', 'name', 'sector', 'market_status', 'exchange', 'latest_price_time']
         extra_kwargs = {
             'url': {'view_name': 'stocks-detail', 'lookup_field': 'pk'}
         }

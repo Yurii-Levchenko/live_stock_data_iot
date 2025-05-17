@@ -1,15 +1,29 @@
 {% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}SD | My Profile{%endblock%}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'users/styles/profile.css' %}">
+{% endblock %}
 
 {% block content %}
 <h2>Your Profile</h2>
 
-<form method="post" action="{% url 'edit-profile' %}">
+<form id='user-form' method="post" action="{% url 'edit-profile' %}">
     {% csrf_token %}
-    <label for="username">Username:</label>
-    <input type="text" id="username" name="username" value="{{ user.username }}" readonly><br><br>
+    <div id='input-fields'>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="{{ user.username }}" readonly><br><br>
 
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" value="{{ user.email }}"><br><br>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" value="{{ user.email }}"><br><br>
+    </div>
+    
+    <div id='edit-buttons'>
+        <a id='edit-profile' href="{% url 'edit-profile' %}">Edit Profile</a>
+        <button type="submit">Update Email</button>
+    </div>
 
     <h3>Favorite Tickers</h3>
     <ul>
@@ -17,8 +31,6 @@
             <li>{{ stock.ticker }}: {{ stock.name }}</li>
         {% endfor %}
     </ul>
-    
-    <a href="{% url 'edit-profile' %}">Edit Profile</a>
-    <button type="submit">Update Email</button>
+
 </form>
 {% endblock %}

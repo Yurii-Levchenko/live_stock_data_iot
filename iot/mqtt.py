@@ -6,102 +6,103 @@ import paho.mqtt.client as mqtt
 from dashboard.models import Stock, StockPrice
 from iot.models import Device, DeviceSession
 from datetime import datetime
+from decimal import Decimal
+from django.utils.timezone import now
 
 logger = logging.getLogger(__name__)
+
+# Cache for last known prices to compare for significant change
+price_cache = {}
+PRICE_CHANGE_THRESHOLD = 0.01  # 1%
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected successfully to MQTT broker")
-        client.subscribe("stocks/#")  # subscribe to all stock topics
-        client.subscribe("devices/#")  # Subscribe to device-related topics
+        client.subscribe("stocks/#")
+        client.subscribe("devices/#")
     else:
         print(f"Failed to connect, return code {rc}")
 
-
 def on_message(client, userdata, msg):
     try:
-        print(f"Received message: {msg.payload.decode('utf-8')} on topic {msg.topic}")
+        topic_parts = msg.topic.split('/')
+        payload = msg.payload.decode('utf-8')
+        print(f"[MQTT] Received '{payload}' on topic '{msg.topic}'")
 
-        # Check if the message is device-related
-        if msg.topic.startswith("devices/"):
-            device_id = msg.topic.split('/')[1]
-
-            # Register the device if not already registered
+        # ========== DEVICE HANDLING ==========
+        if topic_parts[0] == "devices":
+            device_id = topic_parts[1]
             device, created = Device.objects.get_or_create(device_id=device_id)
             if created:
                 print(f"Registered new device: {device_id}")
 
-            # Check for device connection
-            if "connected" in msg.payload.decode('utf-8').lower():
+            if "connected" in payload.lower():
                 DeviceSession.objects.create(device=device, ip_address=client._host)
                 print(f"Device {device_id} connected.")
 
-            elif "disconnected" in msg.payload.decode('utf-8').lower():
+            elif "disconnected" in payload.lower():
                 session = device.sessions.filter(disconnected_at__isnull=True).last()
                 if session:
                     session.disconnected_at = datetime.now()
                     session.save()
                     print(f"Device {device_id} disconnected.")
 
-        # Process stock data (existing logic)
-        elif msg.topic.startswith("stocks/"):
-            topic = msg.topic.split('/')[-1]
-            price = float(msg.payload.decode('utf-8'))
-            print(f"Processing topic: {topic}, price: {price}")
+        # ========== STOCK DATA HANDLING ==========
+        elif topic_parts[0] == "stocks" and len(topic_parts) == 3:
+            ticker = topic_parts[1].upper()
+            subtopic = topic_parts[2]
 
-            # Update stock and broadcast as before
-            stock, _ = Stock.objects.get_or_create(ticker=topic)
-            stock_price = StockPrice.objects.create(stock=stock, price=price, timestamp=datetime.now())
-            print(f"Stock {stock.ticker} updated in DB with price {stock_price.price}")
+            # === WebSocket Broadcast ===
+            stock, _ = Stock.objects.get_or_create(ticker=ticker)
 
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                "stock_updates",
-                {
-                    "type": "send_stock_update",
-                    "data": {
-                        "ticker": stock.ticker,
-                        "price": stock_price.price,
-                        "timestamp": stock_price.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                    },
-                },
-            )
-            print(f"Broadcasted update for {stock.ticker}")
+            if subtopic == "price":
+                    new_price = Decimal(payload)
+                    last_price = price_cache.get(ticker)
+                    price_cache[ticker] = new_price  # Always update cache
+
+                    # === WebSocket Broadcast ===
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        "stock_updates",
+                        {
+                            "type": "send_stock_update",
+                            "data": {
+                                "ticker": stock.ticker,
+                                "price": float(new_price),
+                                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                "market_status": getattr(stock, "market_status", "N/A"),
+                                "exchange": getattr(stock, "exchange", "N/A"),
+                            },
+                        },
+                    )
+                    print(f"[WS] Broadcasted update for {stock.ticker} at {new_price}")
+
+                    # === DB Save Only If Significant ===
+                    if (
+                        last_price is None or
+                        abs((new_price - last_price) / last_price) >= Decimal(PRICE_CHANGE_THRESHOLD)
+                    ):
+                        stock_price = StockPrice.objects.create(stock=stock, price=new_price, recorded_at=now())
+                        print(f"[DB] Stored price for {stock.ticker}: {new_price}")
+                        
+
+            elif subtopic == "timestamp":
+                # Could be used to update UI cache or add extra model logic
+                print(f"{ticker} timestamp: {payload}")
+
+            elif subtopic == "market_status":
+                print(f"{ticker} market status: {payload}")
+                stock.market_status = payload
+                stock.save(update_fields=["market_status"])
+
+            elif subtopic == "exchange":
+                print(f"{ticker} exchange: {payload}")
+                if not stock.exchange:
+                    stock.exchange = payload
+                    stock.save(update_fields=["exchange"])
 
     except Exception as e:
-        logger.error(f"Error processing message: {e}")
-
-
-
-
-# def on_message(client, userdata, msg):
-#     try:
-#         print(f"Received message: {msg.payload.decode('utf-8')} on topic {msg.topic}")
-#         topic = msg.topic.split('/')[-1]
-#         price = float(msg.payload.decode('utf-8'))
-#         print(f"Processing topic: {topic}, price: {price}")
-
-#         # update db
-#         stock, _ = Stock.objects.get_or_create(ticker=topic)
-#         stock_price = StockPrice.objects.create(stock=stock, price=price, timestamp=datetime.now())
-#         print(f"Stock {stock.ticker} updated in DB with price {stock_price.price}")
-
-#         # Broadcast WebSocket update
-#         channel_layer = get_channel_layer()
-#         async_to_sync(channel_layer.group_send)(
-#             "stock_updates",
-#             {
-#                 "type": "send_stock_update",
-#                 "data": {
-#                     "ticker": stock.ticker,
-#                     "price": stock_price.price,
-#                     "timestamp": stock_price.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-#                 },
-#             },
-#         )
-#         print(f"Broadcasted update for {stock.ticker}")
-#     except Exception as e:
-#         logger.error(f"Error processing message: {e}")
+        logger.error(f"Error processing message on topic {msg.topic}: {e}")
 
 
 # MQTT configuration
@@ -113,3 +114,5 @@ client.connect(
     settings.MQTT_PORT, 
     # settings.MQTT_KEEPALIVE
 )
+client.loop_start()  # <- Very important!
+# client.loop_forever()
