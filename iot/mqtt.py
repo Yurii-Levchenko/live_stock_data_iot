@@ -20,6 +20,7 @@ def on_connect(client, userdata, flags, rc):
         print("Connected successfully to MQTT broker")
         client.subscribe("stocks/#")
         client.subscribe("devices/#")
+        print("Subscribed to topics: stocks/#, devices/#")
     else:
         print(f"Failed to connect, return code {rc}")
 

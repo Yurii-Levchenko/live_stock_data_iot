@@ -11,8 +11,8 @@ DEVICE_ID = "D-5"
 BROKER_HOST = "localhost"
 BROKER_PORT = 1883
 STOCKS = ['AAPL', 'GOOG', 'MSFT', 'TSLA', 'AMZN']
-PUBLISH_INTERVAL = 10  # seconds
-PRICE_CHANGE_THRESHOLD = 0.0001  # 1%
+PUBLISH_INTERVAL = 30  # seconds
+# PRICE_CHANGE_THRESHOLD = 0.0001  # 1%
 finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
 # ===================================
 

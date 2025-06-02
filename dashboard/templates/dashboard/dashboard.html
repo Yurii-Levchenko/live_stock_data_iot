@@ -1,4 +1,4 @@
-{% extends 'base\base.html' %}
+{% extends 'base/base.html' %}
 
 {% block content %}
 <h1>Welcome to the IoT Stock Dashboard, {{user.username}}</h1>
@@ -43,7 +43,7 @@
             fetch(`/api/favorites/add/`, {
                 method: "POST",
                 headers: {
-                    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2NzMxODcyLCJpYXQiOjE3NDY3MTAyNzIsImp0aSI6IjMwYjliYTgxYWFkMjQxZWZhNDAzNzczYWJkNDQ4OWM1IiwidXNlcl9pZCI6Mn0.UjxgwZNnWLWyGVMABEV7LCPEpTFNQdJK6O9RFg5tAUc",
+                    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4Nzk5OTA5LCJpYXQiOjE3NDg3NzgzMDksImp0aSI6ImI1MjM5MGQ2NWMwMzQ2NmJhYzRkODJkZjEwZTEyNzM1IiwidXNlcl9pZCI6Mn0.sHcsF4b1ZBKgGeYQ7Ji-9g7N5drjZz72jqhPTxALeCU",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ ticker: stock.ticker }),

@@ -6,3 +6,4 @@ simulation/mqtt-logic-schema.drawio
 live_stock_data_iot\settings.py
 simulation/creds.py
 db.sqlite3
+redis_setup.txt

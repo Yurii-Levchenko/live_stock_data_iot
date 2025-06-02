@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',    # For JWT Authentication
     'channels',                    # For WebSocket support
     'corsheaders',                 # For cross-origin requests
-    'iot',
+    # 'iot',
     # 'dashboard',
     # 'users',
     'api',
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'dashboard.apps.DashboardConfig', # handles signals
     'users.apps.UsersConfig', # handles signals
     'django_celery_beat',
+    'iot.apps.IotConfig',
 ]
 
 MIDDLEWARE = [
@@ -180,7 +181,12 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
 }
 
-MQTT_SERVER = "localhost"
+# for windows terminal
+# MQTT_SERVER = "localhost"
+
+# for wsl terminal
+MQTT_SERVER = "10.255.255.254"
+
 MQTT_PORT = 1883
 MQTT_KEEPALIVE = 60
 # MQTT_USER = ''
