@@ -22,6 +22,24 @@
 </div>
 
 <script>
+    // Get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrfToken = getCookie('csrftoken');
+
     fetch('/api/stocks/')
     .then(response => response.json())
     .then(data => {
@@ -36,29 +54,58 @@
             newRow.insertCell(4).innerText = stock.exchange || 'N/A';
             const actionCell = newRow.insertCell(5); // was 3 before
         
-        // "Add to Favorites" button
+        // "Add/Remove Favorites" button
         const favButton = document.createElement('button');
-        favButton.innerText = "Add to Favorites";
-        favButton.onclick = () => {
-            fetch(`/api/favorites/add/`, {
-                method: "POST",
-                headers: {
-                    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4Nzk5OTA5LCJpYXQiOjE3NDg3NzgzMDksImp0aSI6ImI1MjM5MGQ2NWMwMzQ2NmJhYzRkODJkZjEwZTEyNzM1IiwidXNlcl9pZCI6Mn0.sHcsF4b1ZBKgGeYQ7Ji-9g7N5drjZz72jqhPTxALeCU",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ ticker: stock.ticker }),
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert(`${stock.ticker} added to favorites!`);
-                } else {
-                    alert(`Failed to add ${stock.ticker} to favorites.`);
-                }
-            });
-        };
+        
+        // Check if user is authenticated and is_favorite is available
+        if (stock.hasOwnProperty('is_favorite')) {
+            favButton.innerText = stock.is_favorite ? "Remove from Favorites" : "Add to Favorites";
+            favButton.className = stock.is_favorite ? "remove-fav-btn" : "add-fav-btn";
+            favButton.onclick = () => {
+                const endpoint = stock.is_favorite ? '/api/favorites/remove/' : '/api/favorites/add/';
+                const method = 'POST';
+                
+                fetch(endpoint, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ ticker: stock.ticker }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        // Toggle the favorite status
+                        stock.is_favorite = !stock.is_favorite;
+                        favButton.innerText = stock.is_favorite ? "Remove from Favorites" : "Add to Favorites";
+                        favButton.className = stock.is_favorite ? "remove-fav-btn" : "add-fav-btn";
+                        alert(data.message);
+                    } else {
+                        alert('Error: ' + (data.error || 'Unknown error occurred'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating favorites.');
+                });
+            };
+        } else {
+            // User is not authenticated
+            favButton.innerText = "Login to Add to Favorites";
+            favButton.className = "login-required-btn";
+            favButton.onclick = () => {
+                alert('Please log in to add stocks to your favorites.');
+                window.location.href = '/users/login/';
+            };
+        }
         actionCell.appendChild(favButton);
         });
+    })
+    .catch(error => {
+        console.error('Error fetching stocks:', error);
     });
+
     const socket = new WebSocket('ws://localhost:8000/ws/stocks/');
 
     socket.onmessage = function(event) {
@@ -80,7 +127,40 @@
             newRow.insertCell(2).innerText = data.latest_price_time;
             newRow.insertCell(3).innerText = data.market_status || 'N/A';
             newRow.insertCell(4).innerText = data.exchange || 'N/A';
-            newRow.insertCell(5).innerText = '—'; // Placeholder for action cell
+            
+            // Add favorite button for new stocks
+            const actionCell = newRow.insertCell(5);
+            const favButton = document.createElement('button');
+            
+            // Check if user is authenticated (we'll assume they are if they're on the dashboard)
+            // For WebSocket updates, we'll show the add button
+            favButton.innerText = "Add to Favorites";
+            favButton.className = "add-fav-btn";
+            favButton.onclick = () => {
+                fetch('/api/favorites/add/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ ticker: data.ticker }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        favButton.innerText = "Remove from Favorites";
+                        favButton.className = "remove-fav-btn";
+                        alert(data.message);
+                    } else {
+                        alert('Error: ' + (data.error || 'Unknown error occurred'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while adding to favorites.');
+                });
+            };
+            actionCell.appendChild(favButton);
         }
     };
 
@@ -89,5 +169,46 @@
     };
 
 </script>
+
+<style>
+{% comment %} .add-fav-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+} {% endcomment %}
+
+.remove-fav-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.login-required-btn {
+    background-color: #808080;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+{% comment %} .add-fav-btn:hover {
+    background-color: #45a049;
+} {% endcomment %}
+
+.remove-fav-btn:hover {
+    background-color: #da190b;
+}
+
+.login-required-btn:hover {
+    background-color: #696969;
+}
+</style>
 
 {% endblock %}

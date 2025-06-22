@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-&3^+wcsrv(d1vsu6%5r7kft%z6602^ha%_#s!jb_if$a^@-*li
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.255.255.254']
 
 
 # Application definition
@@ -144,6 +144,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -162,7 +163,11 @@ ASGI_APPLICATION = 'live_stock_data_iot.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # 'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],  # Redis server address
+        },
     },
 }
 
@@ -182,15 +187,16 @@ SIMPLE_JWT = {
 }
 
 # for windows terminal
-# MQTT_SERVER = "localhost"
+MQTT_SERVER = "localhost"
+# MQTT_PORT = 1883
 
 # for wsl terminal
-MQTT_SERVER = "10.255.255.254"
-
+# MQTT_SERVER = "10.255.255.254"
 MQTT_PORT = 1883
+
 MQTT_KEEPALIVE = 60
-# MQTT_USER = ''
-# MQTT_PASSWORD = ''
+# MQTT_USER = 'levch'
+# MQTT_PASSWORD = 'pwd4unixTHE_BOSS'
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']

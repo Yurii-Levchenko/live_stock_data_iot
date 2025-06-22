@@ -25,15 +25,27 @@ class StockViewSet(ModelViewSet):
     def list(self, request):
         stocks = Stock.objects.all()
         result = []
+        
+        # Get user's favorite stocks if authenticated
+        user_favorites = set()
+        if request.user.is_authenticated:
+            user_favorites = set(request.user.profile.favorite_tickers.values_list('ticker', flat=True))
+        
         for stock in stocks:
             latest_price = StockPrice.objects.filter(stock=stock).order_by('-recorded_at').first()
-            result.append({
+            stock_data = {
                 'ticker': stock.ticker,
                 'price': latest_price.price if latest_price else None,
                 'latest_price_time': latest_price.recorded_at.strftime('%Y-%m-%d %H:%M:%S') if latest_price else None,
                 'market_status': stock.market_status or 'N/A',
                 'exchange': stock.exchange or 'N/A',
-            })
+            }
+            
+            # Only include is_favorite for authenticated users
+            if request.user.is_authenticated:
+                stock_data['is_favorite'] = stock.ticker in user_favorites
+            
+            result.append(stock_data)
         return Response(result)
 
     # def list(self, request):
@@ -99,8 +111,9 @@ class UserFavoriteStocksViewSet(ModelViewSet):
         print(f"Trying to add ticker: {ticker}")
         print(f"User: {request.user}")
 
+        # Check if user is authenticated (either via JWT or session)
         if not request.user.is_authenticated:
-            return Response({"error": "JWT Authentication required (Token is missing)."}, status=401)
+            return Response({"error": "Authentication required."}, status=401)
         
         try:
             stock = Stock.objects.get(ticker=ticker)
@@ -119,6 +132,11 @@ class UserFavoriteStocksViewSet(ModelViewSet):
         Remove a stock from the user's favorites.
         """
         ticker = request.data.get("ticker")
+        
+        # Check if user is authenticated (either via JWT or session)
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=401)
+            
         try:
             stock = Stock.objects.get(ticker=ticker)
             profile = request.user.profile

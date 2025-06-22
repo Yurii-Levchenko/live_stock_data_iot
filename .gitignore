@@ -1,6 +1,8 @@
 env-stock/
+env-stock-win/
 staticfiles/
 simulation/env-simulation
+simulation/env-simulation-wsl
 the-task.txt
 simulation/mqtt-logic-schema.drawio
 live_stock_data_iot\settings.py

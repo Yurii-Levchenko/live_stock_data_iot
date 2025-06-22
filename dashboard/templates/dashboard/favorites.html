@@ -7,15 +7,56 @@
         <tr>
             <th>Ticker</th>
             <th>Name</th>
+            <th>Action</th>
         </tr>
     </thead>
     <tbody>
         {% for stock in stocks %}
-        <tr>
+        <tr id="stock-row-{{ stock.ticker }}">
             <td>{{ stock.ticker }}</td>
             <td>{{ stock.name }}</td>
+            <td>
+                <button class="remove-favorite-btn" data-ticker="{{ stock.ticker }}">Remove</button>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const removeButtons = document.querySelectorAll('.remove-favorite-btn');
+    
+    removeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const ticker = this.getAttribute('data-ticker');
+            const row = document.getElementById(`stock-row-${ticker}`);
+            
+            if (confirm(`Are you sure you want to remove ${ticker} from your favorites?`)) {
+                fetch('{% url "remove_favorite" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: `ticker=${ticker}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        row.remove();
+                        alert(data.message);
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while removing the stock from favorites.');
+                });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
