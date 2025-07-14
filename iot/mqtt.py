@@ -8,6 +8,8 @@ from iot.models import Device, DeviceSession
 from datetime import datetime
 from decimal import Decimal
 from django.utils.timezone import now
+from django.core.cache import cache
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -70,13 +72,19 @@ def on_message(client, userdata, msg):
                             "data": {
                                 "ticker": stock.ticker,
                                 "price": float(new_price),
-                                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                "timestamp": now().strftime('%Y-%m-%d %H:%M:%S'),
                                 "market_status": getattr(stock, "market_status", "N/A"),
                                 "exchange": getattr(stock, "exchange", "N/A"),
                             },
                         },
                     )
                     print(f"[WS] Broadcasted update for {stock.ticker} at {new_price}")
+
+
+                    # === Redis Cache Update ===
+                    cache.set(f"stock_price_{ticker}", new_price, timeout=300)  # Cache for 5 minutes
+                    cache_stock_price(ticker, new_price, now().strftime('%Y-%m-%d %H:%M:%S'))
+                    
 
                     # === DB Save Only If Significant ===
                     if (
@@ -105,6 +113,11 @@ def on_message(client, userdata, msg):
     except Exception as e:
         logger.error(f"Error processing message on topic {msg.topic}: {e}")
 
+def cache_stock_price(ticker, price, timestamp):
+    key = f"stock:prices:{ticker}"
+    value = json.dumps({"price": float(price), "timestamp": timestamp})
+    cache.get_client().lpush(key, value)
+    cache.get_client().ltrim(key, 0, 9999)  # Keep last 10,000 updates
 
 # MQTT configuration
 client = mqtt.Client()

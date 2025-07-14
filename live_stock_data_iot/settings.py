@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from celery.schedules import crontab
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-&3^+wcsrv(d1vsu6%5r7kft%z6602^ha%_#s!jb_if$a^@-*li"
+SECRET_KEY = 'django-insecure-&3^+wcsrv(d1vsu6%5r7kft%z6602^ha%_#s!jb_if$a^@-*li'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -53,6 +54,10 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig', # handles signals
     'django_celery_beat',
     'iot.apps.IotConfig',
+
+    'widget_tweaks',
+    'markdownify', 
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -201,12 +206,36 @@ MQTT_KEEPALIVE = 60
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-
-
-
 CELERY_BEAT_SCHEDULE = {
     'fetch-daily-ohlc': {
         'task': 'dashboard.tasks.fetch_daily_ohlc',
         'schedule': crontab(hour=22, minute=30),  # example: every day at 16:30
     },
 }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# This logs any emails sent to the console (so you can copy the password reset link from the console).
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+
+# SENDGRID_SANDBOX_MODE_IN_DEBUG = False  # Set to True for testing without sending real emails
+# DEFAULT_FROM_EMAIL = "levchenko_yurii@knu.ua"
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
+
+# EMAIL_HOST = 'smtp.sendgrid.net'
+# EMAIL_HOST_USER = 'apikey' # this is exactly the value 'apikey'
+# EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+# EMAIL_PORT = 465 #587
+# EMAIL_USE_TLS = True
+
+# EMAIL_USE_SSL = True
+# SENDGRID_TRACK_EMAIL_OPENS = True  # Optional: Track when emails are opened

@@ -15,7 +15,8 @@
                 <li><a href="{% url 'home' %}">Home</a></li>
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'favorites' %}">Favorites</a></li>
-                    <li><a href="{% url 'user-profile' %}">Profile</a></li>  <!-- Updated link to profile page -->
+                    <li><a href="{% url 'user-profile' %}">Profile</a></li>
+                    <li><a href="{% url 'chat:new_chat' %}">Invisor</a></li>
                     <form method="post" action="{% url 'logout' %}" style="display: inline;">
                         {% csrf_token %}
                         <button id='logout-button' type="submit">Logout</button>

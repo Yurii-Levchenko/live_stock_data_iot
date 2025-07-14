@@ -1,0 +1,61 @@
+{% extends "base/base.html" %}
+{% load widget_tweaks %}
+{% load markdownify %}
+{% load static %}
+
+{% block title %}Chat{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'chat/styles/chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+  <aside class="chat-sidebar">
+    <div class="sidebar-header">
+      <span>Recent Chats</span>
+      <a href="{% url 'chat:new_chat' %}" class="new-chat-btn">+ New</a>
+    </div>
+    <ul class="chat-session-list">
+      {% for s in user_sessions %}
+        <li class="chat-session-item{% if s.id == session.id %} active{% endif %}">
+          <a href="{% url 'chat:chat' s.id %}">
+            Chat {{ forloop.counter }}<br>
+            <small>{{ s.created|date:"M d, H:i" }}</small>
+          </a>
+        </li>
+      {% empty %}
+        <li class="chat-session-item empty">No chats yet.</li>
+      {% endfor %}
+    </ul>
+  </aside>
+  <main class="chat-main">
+    <h3 class="chat-title">What's going on with Stock Market again?! Ask Invisor!</h3>
+    <div class="chat-box">
+      <div class="chat-history">
+        {% for msg in chat_history %}
+          <div class="chat-message">
+            <span class="badge {% if msg.sender == 'human' %}badge-human{% else %}badge-bot{% endif %}">
+              {% if msg.sender == 'human' %}
+                {{ msg.username|default:request.user.username }}
+              {% else %}
+                Invisor
+              {% endif %}
+            </span>
+            <div class="message-bubble {% if msg.sender != 'human' %}bot{% endif %}">{{ msg.text|markdownify }}</div>
+          </div>
+        {% empty %}
+          <p class="text-muted">No messages yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+    <form method="post" class="chat-form">
+      {% csrf_token %}
+      <div>
+        {% render_field form.user_input class="form-control" placeholder="What do you discover about Stock Market today?" %}
+      </div>
+      <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+  </main>
+</div>
+{% endblock %}
